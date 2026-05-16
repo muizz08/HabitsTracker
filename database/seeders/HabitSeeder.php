@@ -5,49 +5,37 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Habit;
 use App\Models\User;
+use App\Models\HabitLog; 
+use Carbon\Carbon;
 
 class HabitSeeder extends Seeder
 {
     public function run(): void
     {
-        // Pastikan ada user dengan ID 1 (atau buat user baru)
         $user = User::first() ?? User::factory()->create();
 
-        $habits = [
-            [
-                'title' => 'Minum 2L Air',
-                'icon' => 'fa-tint',
-                'color' => '#3b82f6', // Biru
-            ],
-            [
-                'title' => 'Olahraga 30 Menit',
-                'icon' => 'fa-running',
-                'color' => '#f59e0b', // Oranye
-            ],
-            [
-                'title' => 'Membaca Buku',
-                'icon' => 'fa-book-open',
-                'color' => '#8b5cf6', // Ungu
-            ],
-            [
-                'title' => 'Meditasi 10 Menit',
-                'icon' => 'fa-peace',
-                'color' => '#ec4899', // Pink
-            ],
-            [
-                'title' => 'Tidur Sebelum 22:00',
-                'icon' => 'fa-moon',
-                'color' => '#1e293b', // Gelap
-            ],
+        $dataHabits = [
+            ['title' => 'Minum 2L Air', 'icon' => 'fa-tint', 'color' => '#3b82f6'],
+            ['title' => 'Olahraga 30 Menit', 'icon' => 'fa-running', 'color' => '#f59e0b'],
+            ['title' => 'Membaca Buku', 'icon' => 'fa-book-open', 'color' => '#8b5cf6'],
+            ['title' => 'Meditasi 10 Menit', 'icon' => 'fa-peace', 'color' => '#ec4899'],
+            ['title' => 'Tidur Sebelum 22:00', 'icon' => 'fa-moon', 'color' => '#1e293b'],
         ];
 
-        foreach ($habits as $habit) {
-            Habit::create([
+        foreach ($dataHabits as $item) {
+            // Simpan ke database sebagai Object Model Eloquent murni
+            $insertedHabit = Habit::create([
                 'user_id' => $user->id,
-                'title'   => $habit['title'],
-                'icon'    => $habit['icon'],
-                'color'   => $habit['color'],
-                'completed' => false,
+                'title'   => $item['title'],
+                'icon'    => $item['icon'],
+                'color'   => $item['color'],
+            ]);
+
+            // Gunakan ->id dari Object $insertedHabit murni
+            HabitLog::create([
+                'habit_id'     => $insertedHabit->id, 
+                'log_date'     => Carbon::now()->format('Y-m-d'),
+                'is_completed' => true
             ]);
         }
     }

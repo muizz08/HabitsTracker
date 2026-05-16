@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class SidebarController extends Controller
 {
-     public function index()
+    public function index()
     {
         // 1. Ambil semua kategori untuk dropdown di form "Tambah Tugas"
         $categories = Category::all();
@@ -41,16 +41,6 @@ class SidebarController extends Controller
         $weekStart = now()->startOfWeek();
         $weekEnd = now()->endOfWeek();
 
-        $dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-        $weekDays = [];
-        for ($i = 0; $i < 7; $i++) {
-            $day = $weekStart->copy()->addDays($i);
-            $weekDays[] = [
-                'label' => $dayLabels[$day->dayOfWeekIso - 1],
-                'date' => $day->toDateString(),
-                'number' => $day->translatedFormat('d'),
-            ];
-        }
 
         $habitLogs = \App\Models\HabitLog::whereBetween('log_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
             ->get()
@@ -60,8 +50,8 @@ class SidebarController extends Controller
             });
 
         // 4. Hitung Statistik Sederhana untuk Box di atas UI
-        $totalTasksToday = Task::whereDate('task_date', now())->count();
-        $completedTasksToday = Task::whereDate('task_date', now())->where('is_completed', true)->count();
+        $totalTasksToday = Task::whereDate('due_date', now())->count();
+        $completedTasksToday = Task::whereDate('due_date', now())->where('is_completed', true)->count();
 
         // 5. Kirim semua data ke view 'habits.dashboard'
         return view('habits.dashboard', compact(
@@ -87,7 +77,7 @@ class SidebarController extends Controller
             'title' => $validated['title'],
             'category_id' => $validated['category_id'],
             'priority' => 'Sedang',
-            'task_date' => now()->toDateString(),
+            'due_date' => now()->toDateString(),
             'is_completed' => false,
         ]);
 

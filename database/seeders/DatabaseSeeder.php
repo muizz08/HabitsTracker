@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'category_id' => 1, // Penting
             'title' => 'Selesaikan Project Laravel',
-            'priority' => 'tinggi',
+            'priority' => 'Tinggi',
             'due_date' => now()->addDays(1),
         ]);
     }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Habit;
 use App\Models\HabitLog;
 use App\Models\Task;
+use App\Models\Category;
 
 class HabitLogController extends Controller
 {
@@ -56,6 +57,7 @@ class HabitLogController extends Controller
 
     public function index()
     {
+
         $userId = auth()->id();
 
         // 1. GENERATE DATA HARI (Agar $weekDays tidak undefined)
@@ -74,6 +76,7 @@ class HabitLogController extends Controller
         // 2. AMBIL DATA HABITS & TASKS
         $habits = Habit::all();
         $tasks = Task::all();
+        $categories = Category::all();
 
         // 3. LOGIKA PERSENTASE & LOG
         $completedCount = HabitLog::whereIn('habit_id', $habits->pluck('id'))
@@ -91,7 +94,10 @@ class HabitLogController extends Controller
             'averagePercentage',
             'habitLogs',
             'tasks',
-            'weekDays' // Variabel ini yang sebelumnya hilang
+            'weekDays',
+            'categories'
         ));
+
+
     }
 }
