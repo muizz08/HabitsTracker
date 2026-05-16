@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habitify Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @livewireStyles
+</head>
+
+<body class="bg-gray-50 font-sans">
+    <!-- dasboard -->
+    <div class="flex h-screen">
+        <div x-data="{ sidebarOpen: false }" class="flex h-screen w-full">
+
+            <!-- FUNGSI SIDEBAR -->
+            <div x-show="sidebarOpen" @click="sidebarOpen = false"
+                class="fixed inset-0 z-20 bg-black opacity-50 lg:hidden">
+            </div>
+            @include('habits.sidebar')
+
+            <!-- FUNGSI DASHBOARD -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="flex items-center justify-between p-4 bg-white border-b lg:hidden">
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                    <div class="font-bold text-blue-600">Habitify</div>
+                    <div class="w-8"></div>
+                </header>
+
+                @php
+                    // Mapping data log agar dibaca instan oleh Alpine.js
+                    $initialLogs = [];
+                    foreach ($habits as $habit) {
+                        $initialLogs[$habit->id] = [];
+                        foreach ($weekDays as $day) {
+                            $hasLog = false;
+                            if (isset($habitLogs[$habit->id])) {
+                                $hasLog = $habitLogs[$habit->id]->contains('log_date', $day['date']);
+                            }
+                            $initialLogs[$habit->id][$day['date']] = $hasLog;
+                        }
+                    }
+                    $currentPercentage = $averagePercentage ?? 0;
+                @endphp
+
+                <!-- Bungkus container utama ke dalam x-data Alpine.js -->
+                <main x-data="habitTracker" data-initial-logs='@json($initialLogs)'
+                    data-initial-percentage="{{ $currentPercentage }}"
+                    class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8">
+                    <header class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Halo, Muiss! 👋</h1>
+                            <p class="text-gray-500">
+                                {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
+                            </p>
+                        </div>
+                        <div class="relative">
+                            <i class="fas fa-bell text-gray-400 text-xl"></i>
+                            <span
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">2</span>
+                        </div>
+                    </header>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-blue-50 rounded-xl text-blue-600"><i class="fas fa-list-ul"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold">12</p>
+                                    <p class="text-xs text-gray-500">Tugas Hari Ini</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600"><i class="fas fa-fire"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold">7</p>
+                                    <p class="text-xs text-gray-500">Habit Aktif</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-amber-50 rounded-xl text-amber-600"><i class="fas fa-star"></i></div>
+                                <div>
+                                    <p class="text-2xl font-bold" x-text="percentage + '%'"></p>
+                                    <p class="text-xs text-gray-500">Rata-rata Minggu</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-sky-50 rounded-xl text-sky-600"><i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold">28</p>
+                                    <p class="text-xs text-gray-500">Hari Beruntun</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DAFTAR TUGAS -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-slate-900">Daftar Tugas</h3>
+                                </div>
+                                <button
+                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">+
+                                    Tambah Tugas</button>
+                            </div>
+
+                            <div class="mb-6 flex flex-wrap gap-2">
+                                @foreach(['Semua', 'Hari Ini', 'Penting', 'Selesai'] as $tab)
+                                    <button
+                                        class="rounded-full px-4 py-2 text-sm font-semibold transition 
+                                                                                    {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                        {{ $tab }}
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <div
+                                class="hidden md:grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-4 text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-3 mb-3">
+                                <div class="font-semibold">Tugas</div>
+                                <div class="font-semibold">Kategori</div>
+                                <div class="font-semibold">Prioritas</div>
+                                <div class="font-semibold">Tanggal</div>
+                                <div class="font-semibold">Aksi</div>
+                            </div>
+
+                            <div class="space-y-3">
+                                @forelse($tasks as $task)
+                                    @php
+                                        $categoryName = $task->category->name ?? 'Tanpa Kategori';
+                                        $categoryColor = match (strtolower($categoryName)) {
+                                            'penting' => 'bg-red-100 text-red-700',
+                                            'kesehatan' => 'bg-emerald-100 text-emerald-700',
+                                            'belajar' => 'bg-sky-100 text-sky-700',
+                                            'kebiasaan' => 'bg-emerald-100 text-emerald-700',
+                                            'kerja' => 'bg-amber-100 text-amber-700',
+                                            default => 'bg-slate-100 text-slate-700',
+                                        };
+                                        $priorityColor = match (strtolower($task->priority)) {
+                                            'tinggi' => 'text-red-600',
+                                            'sedang' => 'text-amber-600',
+                                            'rendah' => 'text-emerald-600',
+                                            default => 'text-slate-600',
+                                        };
+                                    @endphp
+
+                                    <div
+                                        class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 shadow-sm md:grid md:grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] md:items-center md:gap-4">
+                                        <div class="flex items-start gap-3">
+                                            <input type="checkbox"
+                                                class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600" />
+                                            <div>
+                                                <p class="font-semibold text-slate-900">{{ $task->title }}</p>
+                                                <p class="text-xs text-slate-500 mt-1 hidden md:block">{{ $categoryName }} ·
+                                                    {{ $task->priority }} ·
+                                                    {{ \Carbon\Carbon::parse($task->task_date)->translatedFormat('d M Y') }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 md:mt-0">
+                                            <span
+                                                class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $categoryColor }}">{{ $categoryName }}</span>
+                                        </div>
+
+                                        <div class="mt-4 md:mt-0 text-sm font-semibold {{ $priorityColor }}">
+                                            {{ $task->priority }}
+                                        </div>
+
+                                        <div class="mt-4 md:mt-0 text-sm text-slate-500">
+                                            {{ \Carbon\Carbon::parse($task->task_date)->translatedFormat('d M Y') }}
+                                        </div>
+
+                                        <div class="mt-4 md:mt-0 flex items-center gap-3 text-slate-400">
+                                            <button class="rounded-full p-2 hover:bg-slate-100 hover:text-slate-700"><i
+                                                    class="fas fa-pen"></i></button>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-slate-500">Belum ada tugas.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <!-- HABITS TRACKER -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-slate-900">Habit Tracker</h3>
+                                </div>
+                                <select
+                                    class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                                    <option>Minggu Ini</option>
+                                </select>
+                            </div>
+
+
+                            <div class="overflow-x-auto">
+                                <div class="flex gap-2 md:gap-5 px-4 text-xs uppercase tracking-[0.24em] 
+                                text-slate-500 font-semibold border-b border-slate-200 pb-3 mb-4 min-w-max">
+                                    <div class="w-48 text-center mt-2 font-bold text-lg">Habit</div>
+                                    @foreach($weekDays as $day)
+                                        <div class="w-16 text-center">
+                                            <div>{{ $day['label'] }}</div>
+                                            <div class="mt-1 text-sm font-semibold text-slate-900">{{ $day['number'] }}
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="space-y-4">
+                                    @foreach($habits as $habit)
+                                        @php
+                                            $logsByDate = $habitLogs->has($habit->id) ? $habitLogs[$habit->id] : collect();
+                                        @endphp
+                                        <div class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 
+                                                                    bg-white px-4 py-4 shadow-sm min-w-max">
+                                            <div class="flex items-center gap-2 md:gap-3 w-48 shrink-0">
+                                                <div class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
+                                                    style="background-color: {{ $habit->color }};">
+                                                    <i class="fas {{ $habit->icon }} text-lg"></i>
+                                                </div>
+
+                                                <div>
+                                                    <p class="font-bold text-slate-900 text-sm leading-tight">
+                                                        {{ $habit->title }}
+                                                    </p>
+                                                    <p class="text-xs text-slate-400">Habit harian fixed</p>
+                                                </div>
+                                            </div>
+
+                                            @foreach($weekDays as $day)
+                                                @php
+                                                    $cellDate = $day['date'];
+                                                @endphp
+                                                <div class="w-16 flex justify-center">
+                                                    <button type="button"
+                                                        @click="toggleHabit('{{ $habit->id }}', '{{ $cellDate }}')"
+                                                        :class="isDone('{{ $habit->id }}', '{{ $cellDate }}') ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'"
+                                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out">
+
+                                                        <i class="fas fa-check"
+                                                            x-show="isDone('{{ $habit->id }}', '{{ $cellDate }}')"></i>
+                                                    </button>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="mt-2 mb-2 text-sm font-semibold text-blue-600">Lihat semua habit</div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div
+                        class="mt-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+                        <div class="flex items-start gap-6 relative z-10">
+                            <div class="text-indigo-200">
+                                <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24">
+                                    <path
+                                        d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.866 19.883 22 16.017 22H14.017V21ZM1 21L1 18C1 16.8954 1.89543 16 3 16H6C6.55228 16 7 15.5523 7 15V9C7 8.44772 6.55228 8 6 8H3C1.89543 8 1 7.10457 1 6V5C1 3.89543 1.89543 3 3 3H6C8.20914 3 10 4.79086 10 7V15C10 18.866 6.86599 22 3 22H1V21Z" />
+                                </svg>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">
+                                    Disiplin adalah jembatan antara tujuan dan pencapaian.
+                                </h3>
+                                <p class="text-slate-500">Terus konsisten dan jangan menyerah!</p>
+                            </div>
+                        </div>
+
+                        <div class="absolute right-0 bottom-0 opacity-20 pointer-events-none">
+                            <img src="{{ asset('storage/images/gunung.png') }}" alt="user upload" class="w-80">
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+    @livewireScripts
+</body>
+
+@if (app()->environment('local') || env('APP_ENV') !== null)
+    @vite(['resources/js/app.js'])
+@else
+    <script src="/build/assets/app.js"></script>
+@endif
+
+</html>
