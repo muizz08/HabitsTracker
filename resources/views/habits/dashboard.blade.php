@@ -8,8 +8,8 @@
     <title>Habitify Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @vite('resources/js/app.js')
     @livewireStyles
 </head>
 
@@ -126,7 +126,7 @@
                                 @foreach(['Semua', 'Hari Ini', 'Penting', 'Selesai'] as $tab)
                                     <button
                                         class="rounded-full px-4 py-2 text-sm font-semibold transition 
-                                                                                    {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                                                                                {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                                         {{ $tab }}
                                     </button>
                                 @endforeach
@@ -226,21 +226,17 @@
                                 </div>
                                 <div class="space-y-4">
                                     @foreach($habits as $habit)
-                                        @php
-                                            $logsByDate = $habitLogs->has($habit->id) ? $habitLogs[$habit->id] : collect();
-                                        @endphp
-                                        <div class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 
-                                                                    bg-white px-4 py-4 shadow-sm min-w-max">
+                                        <div
+                                            class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm min-w-max">
+
                                             <div class="flex items-center gap-2 md:gap-3 w-48 shrink-0">
                                                 <div class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
                                                     style="background-color: {{ $habit->color }};">
                                                     <i class="fas {{ $habit->icon }} text-lg"></i>
                                                 </div>
-
                                                 <div>
                                                     <p class="font-bold text-slate-900 text-sm leading-tight">
-                                                        {{ $habit->title }}
-                                                    </p>
+                                                        {{ $habit->title }}</p>
                                                     <p class="text-xs text-slate-400">Habit harian fixed</p>
                                                 </div>
                                             </div>
@@ -248,18 +244,21 @@
                                             @foreach($weekDays as $day)
                                                 @php
                                                     $cellDate = $day['date'];
+                                                    // Cek langsung lewat data log yang dikirim dari Backend Laravel
+                                                    $isDone = isset($habitLogs[$habit->id]) && $habitLogs[$habit->id]->contains('log_date', $cellDate);
                                                 @endphp
                                                 <div class="w-16 flex justify-center">
                                                     <button type="button"
-                                                        @click="toggleHabit('{{ $habit->id }}', '{{ $cellDate }}')"
-                                                        :class="isDone('{{ $habit->id }}', '{{ $cellDate }}') ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'"
-                                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out">
-
-                                                        <i class="fas fa-check"
-                                                            x-show="isDone('{{ $habit->id }}', '{{ $cellDate }}')"></i>
+                                                    @click="toggleHabit({{ $habit->id }}, '{{ $cellDate }}')"
+                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out"
+                                                    :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'">
+                                                    <template x-if="habits[{{ $habit->id }}]['{{ $cellDate }}']">
+                                                        <i class="fas fa-check"></i>
+                                                    </template>
                                                     </button>
                                                 </div>
                                             @endforeach
+
                                         </div>
                                     @endforeach
                                 </div>
@@ -297,11 +296,4 @@
     </div>
     @livewireScripts
 </body>
-
-@if (app()->environment('local') || env('APP_ENV') !== null)
-    @vite(['resources/js/app.js'])
-@else
-    <script src="/build/assets/app.js"></script>
-@endif
-
 </html>

@@ -1,56 +1,52 @@
 export default () => ({
-    logs: {},
-    percentage: 0, // State untuk menampung persentase dari backend
+    percentage: 0,
+    habits: {},
 
     init() {
-        // Ambil data logs awal dan persentase awal dari Blade HTML dataset
-        this.logs = JSON.parse(this.$el.dataset.initialLogs || '{}');
-        this.percentage = parseInt(this.$el.dataset.initialPercentage || 0);
+        // Mengambil data awal dari atribut HTML data-initial-*
+        this.habits = JSON.parse(this.$el.getAttribute('data-initial-logs') || '{}');
+        this.percentage = parseInt(this.$el.getAttribute('data-initial-percentage') || '0');
     },
 
-    // Mengecek apakah habit pada tanggal tersebut berstatus true (checked)
-    isDone(habitId, date) {
-        return this.logs[habitId] && this.logs[habitId][date] === true;
-    },
-
-    // Fungsi utama saat tombol lingkaran di-klik
     async toggleHabit(habitId, date) {
-        // 1. Ambil status sebelum dirubah untuk backup jika gagal
-        const previousState = this.isDone(habitId, date);
+        if (!this.habits[habitId]) {
+            this.habits[habitId] = {};
+        }
+
+        // Simpan status lama buat rollback kalau gagal
+        const previousState = this.habits[habitId][date] ?? false;
         
-        // 2. Update UI secara Instan (Optimistic UI)
-        if (!this.logs[habitId]) this.logs[habitId] = {};
-        this.logs[habitId][date] = !previousState;
+        // Update di UI duluan (Reaktif)
+        this.habits[habitId][date] = !previousState;
 
         try {
-            // 3. Tembak endpoint asli backend kamu
-            const res = await fetch('/habit-logs/toggle', {
+            const response = await fetch('/habit-logs/toggle', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Accept': 'application/json'
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
                     habit_id: habitId,
-                    log_date: date // Menyesuaikan nama request backend lama: log_date
+                    log_date: date
                 })
             });
 
-            if (!res.ok) throw new Error('HTTP Error dari Server');
+            const data = await response.json();
 
-            const data = await res.json();
+            if (!response.ok) {
+                throw new Error('Gagal memperbarui data');
+            }
 
-            // 4. Update persentase secara realtime dari hasil hitungan controller backend
-            if (data.newPercentage !== undefined) {
+            // Update persentase baru dari server
+            if (data && data.newPercentage !== undefined) {
                 this.percentage = data.newPercentage;
             }
 
-        } catch (err) {
-            // Revert UI ke status semula jika koneksi/server error
-            this.logs[habitId][date] = previousState;
-            alert('Gagal menyimpan perubahan.');
-            console.error(err);
+        } catch (error) {
+            // Rollback status kalau network/server error
+            this.habits[habitId][date] = previousState;
+            alert('Gagal memperbarui data, silahkan coba lagi.');
         }
     }
-});
+});    
