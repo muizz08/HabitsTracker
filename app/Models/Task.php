@@ -9,25 +9,27 @@ class Task extends Model
 {
     use HasFactory;
 
-    // Tambahkan ini agar kolom bisa diisi lewat Controller
     protected $fillable = [
-        'title',
-        'description',
-        'priority',
-        'task_date',
-        'is_completed',
+        'user_id',
         'category_id',
+        'title',
+        'priority',
         'reminder',
+        'due_date',
+        'description',
+        'is_completed',
     ];
 
-    // Relasi harus berada di dalam class
+    // Relasi kategori
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
+    // Relasi tags
     public function tags()
     {
         return $this->belongsToMany(Tag::class);
     }
 }
+

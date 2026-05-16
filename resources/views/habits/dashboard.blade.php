@@ -10,7 +10,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite('resources/js/app.js')
-    @livewireStyles
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -53,18 +52,14 @@
                 <!-- Bungkus container utama ke dalam x-data Alpine.js -->
                 <main x-data="habitTracker" data-initial-logs='@json($initialLogs)'
                     data-initial-percentage="{{ $currentPercentage }}"
-                    class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8">
+                    class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8 transition-all duration-300"
+                    x-bind:style="openPanel ? 'max-width: calc(100% - 22rem)' : 'max-width: 100%'">
                     <header class="flex justify-between items-center mb-8">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800">Halo, Muiss! 👋</h1>
                             <p class="text-gray-500">
                                 {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
                             </p>
-                        </div>
-                        <div class="relative">
-                            <i class="fas fa-bell text-gray-400 text-xl"></i>
-                            <span
-                                class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">2</span>
                         </div>
                     </header>
 
@@ -112,90 +107,158 @@
 
                     <!-- DAFTAR TUGAS -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
                                 <div>
                                     <h3 class="text-xl font-semibold text-slate-900">Daftar Tugas</h3>
                                 </div>
-                                <button
-                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">+
-                                    Tambah Tugas</button>
+                                <button @click="openPanel = true"
+                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 w-full md:w-auto">
+                                    + Tambah Tugas
+                                </button>
                             </div>
 
-                            <div class="mb-6 flex flex-wrap gap-2">
+                            <div class="mb-6 flex flex-nowrap overflow-x-auto lg:flex-wrap lg:overflow-x-visible gap-2 pb-2 scrollbar-none"
+                                style="-webkit-overflow-scrolling: touch;">
                                 @foreach(['Semua', 'Hari Ini', 'Penting', 'Selesai'] as $tab)
-                                    <button
+                                    <button type="button"
                                         class="rounded-full px-4 py-2 text-sm font-semibold transition 
-                                                                                                {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                                                                                                                                                           shrink-0 lg:shrink h-auto min-w-max
+                                                                                                                                                                           {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                                         {{ $tab }}
                                     </button>
                                 @endforeach
                             </div>
 
-                            <div
-                                class="hidden md:grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-4 text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-3 mb-3">
-                                <div class="font-semibold">Tugas</div>
-                                <div class="font-semibold">Kategori</div>
-                                <div class="font-semibold">Prioritas</div>
-                                <div class="font-semibold">Tanggal</div>
-                                <div class="font-semibold">Aksi</div>
-                            </div>
+                            <div class="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 scrollbar-none"
+                                style="-webkit-overflow-scrolling: touch;">
 
-                            <div class="space-y-3">
-                                @forelse($tasks as $task)
-                                    @php
-                                        $categoryName = $task->category->name ?? 'Tanpa Kategori';
-                                        $categoryColor = match (strtolower($categoryName)) {
-                                            'penting' => 'bg-red-100 text-red-700',
-                                            'kesehatan' => 'bg-emerald-100 text-emerald-700',
-                                            'belajar' => 'bg-sky-100 text-sky-700',
-                                            'kebiasaan' => 'bg-emerald-100 text-emerald-700',
-                                            'kerja' => 'bg-amber-100 text-amber-700',
-                                            default => 'bg-slate-100 text-slate-700',
-                                        };
-                                        $priorityColor = match (strtolower($task->priority)) {
-                                            'tinggi' => 'text-red-600',
-                                            'sedang' => 'text-amber-600',
-                                            'rendah' => 'text-emerald-600',
-                                            default => 'text-slate-600',
-                                        };
-                                    @endphp
+                                <div class="min-w-[900px]">
 
-                                    <div
-                                        class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 shadow-sm md:grid md:grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] md:items-center md:gap-4">
-                                        <div class="flex items-start gap-3">
-                                            <input type="checkbox"
-                                                class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600" />
-                                            <div>
-                                                <p class="font-semibold text-slate-900">{{ $task->title }}</p>
-                                                <p class="text-xs text-slate-500 mt-1 hidden md:block">{{ $categoryName }} ·
-                                                    {{ $task->priority }} ·
-                                                    {{ \Carbon\Carbon::parse($task->task_date)->translatedFormat('d M Y') }}
-                                                </p>
-                                            </div>
+                                    <!-- HEADER -->
+                                    <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr]
+                                        gap-4 items-center
+                                        text-sm text-slate-500 uppercase tracking-[0.2em]
+                                        border-b border-slate-200 pb-4 mb-4 pr-3">
+
+                                        <div class="pl-10 font-semibold text-center">
+                                            Tugas
                                         </div>
 
-                                        <div class="mt-4 md:mt-0">
-                                            <span
-                                                class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $categoryColor }}">{{ $categoryName }}</span>
+                                        <div class="font-semibold text-center pl-4">
+                                            Kategori
                                         </div>
 
-                                        <div class="mt-4 md:mt-0 text-sm font-semibold {{ $priorityColor }}">
-                                            {{ $task->priority }}
+                                        <div class="font-semibold text-center pl-3">
+                                            Prioritas
                                         </div>
 
-                                        <div class="mt-4 md:mt-0 text-sm text-slate-500">
-                                            {{ \Carbon\Carbon::parse($task->task_date)->translatedFormat('d M Y') }}
+                                        <div class="font-semibold text-center">
+                                            Tanggal
                                         </div>
 
-                                        <div class="mt-4 md:mt-0 flex items-center gap-3 text-slate-400">
-                                            <button class="rounded-full p-2 hover:bg-slate-100 hover:text-slate-700"><i
-                                                    class="fas fa-pen"></i></button>
+                                        <div class="font-semibold text-center pr-1">
+                                            Edit
                                         </div>
                                     </div>
-                                @empty
-                                    <p class="text-slate-500">Belum ada tugas.</p>
-                                @endforelse
+
+                                    <!-- LIST -->
+                                    <div class="space-y-3">
+
+                                        @forelse($tasks as $task)
+
+                                            @php
+                                                $categoryName = $task->category->name ?? 'Tanpa Kategori';
+
+                                                $categoryColor = match (strtolower($categoryName)) {
+                                                    'penting' => 'bg-red-100 text-red-700',
+                                                    'kesehatan' => 'bg-emerald-100 text-emerald-700',
+                                                    'belajar' => 'bg-sky-100 text-sky-700',
+                                                    'kebiasaan' => 'bg-emerald-100 text-emerald-700',
+                                                    'kerja' => 'bg-amber-100 text-amber-700',
+                                                    default => 'bg-slate-100 text-slate-700',
+                                                };
+
+                                                $priorityColor = match (strtolower($task->priority)) {
+                                                    'tinggi' => 'text-red-600',
+                                                    'sedang' => 'text-amber-600',
+                                                    'rendah' => 'text-emerald-600',
+                                                    default => 'text-slate-600',
+                                                };
+                                            @endphp
+
+                                            <!-- ROW -->
+                                            <div
+                                                class="rounded-[1.75rem] border border-slate-200 bg-slate-50
+                                                                                                                                               px-5 py-4 shadow-sm transition
+                                                                                                                                               hover:border-slate-300 hover:shadow-md">
+
+                                                <div
+                                                    class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr]
+                                                                                                                                                   gap-4 items-center text-sm text-slate-700">
+
+                                                    <!-- TUGAS -->
+                                                    <div class="grid grid-cols-[24px_1fr] gap-4 items-start">
+
+                                                        <input type="checkbox"
+                                                            class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+
+                                                        <div class="min-w-0">
+                                                            <p class="font-semibold text-slate-900 truncate">
+                                                                {{ $task->title }}
+                                                            </p>
+
+                                                            <p class="text-xs text-slate-500 mt-1 hidden lg:block">
+                                                                {{ $categoryName }} · {{ $task->priority }} ·
+{{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- KATEGORI -->
+                                                    <div class="flex justify-center">
+                                                        <span
+                                                            class="inline-flex items-center rounded-full px-5 py-1 text-xs font-semibold {{ $categoryColor }}">
+                                                            {{ $categoryName }}
+                                                        </span>
+                                                    </div>
+
+                                                    <!-- PRIORITAS -->
+                                                    <div class="text-center text-sm font-semibold {{ $priorityColor }}">
+                                                        {{ $task->priority }}
+                                                    </div>
+
+                                                    <!-- TANGGAL -->
+                                                    <div class="flex items-center justify-center">
+                                                        <span class="text-sm text-slate-500 whitespace-nowrap">
+{{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
+                                                        </span>
+                                                    </div>
+
+                                                    <!-- AKSI -->
+                                                    <div class="flex items-center justify-center">
+                                                        <button
+                                                            class="rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700">
+                                                            <i class="fas fa-pen text-sm"></i>
+                                                        </button>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+
+                                        @empty
+
+                                            <div
+                                                class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                                                <p class="text-slate-500">
+                                                    Belum ada tugas.
+                                                </p>
+                                            </div>
+
+                                        @endforelse
+
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -236,7 +299,8 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-bold text-slate-900 text-sm leading-tight">
-                                                        {{ $habit->title }}</p>
+                                                        {{ $habit->title }}
+                                                    </p>
                                                     <p class="text-xs text-slate-400">Habit harian fixed</p>
                                                 </div>
                                             </div>
@@ -249,12 +313,12 @@
                                                 @endphp
                                                 <div class="w-16 flex justify-center">
                                                     <button type="button"
-                                                    @click="toggleHabit({{ $habit->id }}, '{{ $cellDate }}')"
-                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out"
-                                                    :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'">
-                                                    <template x-if="habits[{{ $habit->id }}]['{{ $cellDate }}']">
-                                                        <i class="fas fa-check"></i>
-                                                    </template>
+                                                        @click="toggleHabit({{ $habit->id }}, '{{ $cellDate }}')"
+                                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out"
+                                                        :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'">
+                                                        <template x-if="habits[{{ $habit->id }}]['{{ $cellDate }}']">
+                                                            <i class="fas fa-check"></i>
+                                                        </template>
                                                     </button>
                                                 </div>
                                             @endforeach
@@ -290,10 +354,12 @@
                             <img src="{{ asset('storage/images/gunung.png') }}" alt="user upload" class="w-80">
                         </div>
                     </div>
+
+                    @include('habits.sidepanel')
                 </main>
             </div>
         </div>
     </div>
-    @livewireScripts
 </body>
+
 </html>

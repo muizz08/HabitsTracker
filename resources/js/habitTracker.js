@@ -1,6 +1,7 @@
 export default () => ({
     percentage: 0,
     habits: {},
+    openPanel: false,
 
     init() {
         // Mengambil data awal dari atribut HTML data-initial-*
