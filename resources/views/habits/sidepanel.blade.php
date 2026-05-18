@@ -8,6 +8,7 @@
         class="fixed inset-0 bg-slate-900/40">
     </div>
 
+
     <!-- PANEL -->
     <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
@@ -28,8 +29,9 @@
 
                             <!-- HEADER -->
                             <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-[18px] font-semibold text-slate-900">
-                                    Tambah / Edit Tugas
+                                <h2 class="text-[18px] font-semibold text-slate-900" x-text="panelMode === 'edit'
+                                    ? 'Edit Tugas'
+                                    : 'Tambah Tugas'">
                                 </h2>
 
                                 <button @click="openPanel = false" class="h-9 w-9 rounded-full flex items-center justify-center
@@ -39,7 +41,21 @@
                             </div>
 
                             <!-- FORM -->
-                            <form action="{{ route('tasks.store') }}" method="POST" class="space-y-5">
+                            <form x-ref="taskForm" action="{{ route('tasks.store') }}" method="POST" class="space-y-5"
+                                @submit.prevent="
+
+                                showTagError = form.tags.length === 0
+
+                                if(showTagError){
+                                    return
+                                }
+
+                                if(panelMode === 'edit'){
+                                    $refs.taskForm.action = '/tasks/' + panelTaskId
+                                }
+
+                                $refs.taskForm.submit()">
+
                                 @if (session('success'))
                                     <div
                                         class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
@@ -63,9 +79,10 @@
                                         Judul Tugas
                                     </label>
 
-                                    <input type="text" placeholder="Menyelesaikan desain landing page" class="w-full rounded-2xl border border-slate-200 bg-white
+                                    <input type="text" name="title" x-model="form.title"
+                                        placeholder="Menyelesaikan desain landing page" class="w-full rounded-2xl border border-slate-200 bg-white
                                         px-4 py-3 text-sm outline-none
-                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" name="title">
+                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 " required>
                                 </div>
 
                                 <!-- KATEGORI -->
@@ -74,9 +91,9 @@
                                         Kategori
                                     </label>
 
-                                    <select name="category_id" class="w-full rounded-2xl border border-slate-200 bg-white
+                                    <select name="category_id" x-model="form.category_id" class="w-full rounded-2xl border border-slate-200 bg-white
                                         px-4 py-3 text-sm outline-none
-                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required>
 
                                         <option value="">
                                             Pilih Kategori
@@ -99,20 +116,20 @@
                                     <div class="flex items-center gap-6">
 
                                         <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" name="priority" value="Rendah"
-                                                class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" name="priority" x-model="form.priority" value="Rendah"
+                                                class="text-indigo-600 focus:ring-indigo-500" required>
                                             <span class="text-sm text-slate-600">Rendah</span>
                                         </label>
 
                                         <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" name="priority" value="Sedang"
-                                                class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" name="priority" x-model="form.priority" value="Sedang"
+                                                class="text-indigo-600 focus:ring-indigo-500" required>
                                             <span class="text-sm text-slate-600">Sedang</span>
                                         </label>
 
                                         <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" name="priority" value="Tinggi" checked
-                                                class="text-indigo-600 focus:ring-indigo-500">
+                                            <input type="radio" name="priority" x-model="form.priority" value="Tinggi"
+                                                checked class="text-indigo-600 focus:ring-indigo-500" required>
                                             <span class="text-sm text-slate-600">Tinggi</span>
                                         </label>
 
@@ -128,19 +145,23 @@
                                         </span>
                                     </label>
 
-                                    <div class="grid grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-2 gap-3 rounded-2xl transition-all duration-200 p-2"
+                                        :class="showTagError
+                                        ? 'border border-red-400 bg-red-50/40'
+                                        : 'border border-transparent'">
 
-                                        @foreach($categories as $category)
+                                        @foreach($tags as $tag)
 
                                             <label
                                                 class="flex items-center gap-3 rounded-xl border border-slate-200
-                                                                                                        bg-white px-3 py-3 cursor-pointer hover:border-indigo-300 transition">
+                                                                bg-white px-3 py-3 cursor-pointer hover:border-indigo-300 transition">
 
-                                                <input type="checkbox"
+                                                <input type="checkbox" name="tags[]" value="{{ $tag->id }}"
+                                                    x-model="form.tags" @change="showTagError = form.tags.length === 0"
                                                     class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
 
                                                 <span class="text-sm text-slate-700">
-                                                    {{ $category->name }}
+                                                    {{ $tag->name }}
                                                 </span>
 
                                             </label>
@@ -148,6 +169,15 @@
                                         @endforeach
 
                                     </div>
+
+                                    <p x-show="showTagError" x-transition class="mt-2 text-xs text-red-500">
+                                        Minimal pilih 1 tag
+                                    </p>
+                                    @error('tags')
+                                        <p class="mt-2 text-xs text-red-500">
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
                                 </div>
 
                                 <!-- PENGINGAT -->
@@ -160,7 +190,8 @@
                                     </div>
 
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="reminder" checked class="sr-only peer">
+                                        <input type="checkbox" name="reminder" x-model="form.reminder" checked
+                                            class="sr-only peer" required>
 
                                         <div class="w-11 h-6 bg-slate-200 rounded-full
                                             peer peer-checked:bg-indigo-600
@@ -179,9 +210,9 @@
                                         Tanggal
                                     </label>
 
-                                    <input type="date" name="due_date" class="w-full rounded-2xl border border-slate-200 bg-white
+                                    <input type="date" name="due_date" x-model="form.due_date" class="w-full rounded-2xl border border-slate-200 bg-white
                                         px-4 py-3 text-sm outline-none
-                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+                                        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required>
                                 </div>
 
                                 <!-- DESKRIPSI -->
@@ -191,7 +222,7 @@
                                         <span class="text-slate-400">(Opsional)</span>
                                     </label>
 
-                                    <textarea name="description" rows="5"
+                                    <textarea name="description" x-model="form.description" rows="5"
                                         placeholder="Menyelesaikan desain landing page sebelum deadline." class="w-full rounded-2xl border border-slate-200 bg-white
                                         px-4 py-3 text-sm outline-none resize-none
                                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"></textarea>
@@ -212,7 +243,7 @@
                                             Batal
                                         </button>
 
-                                        <button type="button" class="rounded-xl bg-red-500
+                                        <button type="button" @click="deleteTask()" class="rounded-xl bg-red-500
                                         py-3 text-sm font-semibold text-white
                                         hover:bg-red-600 transition">
                                             Hapus

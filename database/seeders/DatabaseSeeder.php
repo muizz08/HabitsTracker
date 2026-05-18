@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -21,27 +23,29 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        // 2. Seed Categories
-        \App\Models\Category::insert([
-            ['name' => 'Penting', 'color' => 'red'],
-            ['name' => 'Kerja', 'color' => 'orange'],
-            ['name' => 'Belajar', 'color' => 'blue'],
-            ['name' => 'Kesehatan', 'color' => 'green'],
-            ['name' => 'Kebiasaan', 'color' => 'emerald'],
-        ]);
-
         // 3. Panggil HabitSeeder
         $this->call([
             HabitSeeder::class,
         ]);
 
-        // 4. Seed Tasks agar tabel Task tidak kosong
-        \App\Models\Task::create([
+        // 4. Seed Categories agar foreign key tasks terpenuhi
+        $this->call([
+            CategorySeeder::class,
+        ]);
+
+        // 5. Seed Tags
+        $this->call([
+            tags::class,
+        ]);
+
+        // 6. Seed Tasks agar tabel Task tidak kosong
+        Task::create([
             'user_id' => $user->id,
             'category_id' => 1, // Penting
             'title' => 'Selesaikan Project Laravel',
             'priority' => 'Tinggi',
             'due_date' => now()->addDays(1),
         ]);
+
     }
 }

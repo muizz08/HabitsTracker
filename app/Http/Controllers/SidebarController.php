@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-
-use App\Models\Task;
-use App\Models\Habit;
 use App\Models\Category;
+use App\Models\Habit;
+use App\Models\HabitLog;
+use App\Models\Task;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 
 class SidebarController extends Controller
@@ -14,6 +15,8 @@ class SidebarController extends Controller
     {
         // 1. Ambil semua kategori untuk dropdown di form "Tambah Tugas"
         $categories = Category::all();
+        // 2a. Ambil semua tag dari tabel tags
+        $tags = Tag::all();
 
         // 2. Ambil Todo List yang belum selesai (is_completed = false)
         // Kita gunakan eager loading 'with' agar lebih ringan saat ambil data kategori
@@ -41,8 +44,12 @@ class SidebarController extends Controller
         $weekStart = now()->startOfWeek();
         $weekEnd = now()->endOfWeek();
 
+        $weekDays = [];
+        for ($i = 0; $i < 7; $i++) {
+            $weekDays[] = $weekStart->copy()->addDays($i);
+        }
 
-        $habitLogs = \App\Models\HabitLog::whereBetween('log_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+        $habitLogs = HabitLog::whereBetween('log_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
             ->get()
             ->groupBy('habit_id')
             ->map(function ($logs) {
@@ -56,6 +63,7 @@ class SidebarController extends Controller
         // 5. Kirim semua data ke view 'habits.dashboard'
         return view('habits.dashboard', compact(
             'categories',
+            'tags',
             'tasks',
             'habits',
             'totalTasksToday',
@@ -84,4 +92,3 @@ class SidebarController extends Controller
         return redirect()->back()->with('success', 'Tugas berhasil disimpan.');
     }
 }
-
