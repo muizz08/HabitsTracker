@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Category;
 use App\Models\Habit;
 use App\Models\HabitLog;
 use App\Models\Task;
-use App\Models\Category;
+use Illuminate\Http\Request;
+use App\Models\Tag;
 
 class HabitLogController extends Controller
 {
@@ -15,46 +16,54 @@ class HabitLogController extends Controller
      */
     public function toggle(Request $request)
     {
-        // Validasi input
         $request->validate([
-            'habit_id' => 'required|exists:habits,id',
+            'habit_id' => 'required',
             'log_date' => 'required|date',
         ]);
 
-        $log = HabitLog::where('habit_id', $request->habit_id)
-            ->where('log_date', $request->log_date)
+        $habitId = $request->habit_id;
+        $date = $request->log_date;
+
+        $existing = HabitLog::where('habit_id', $habitId)
+            ->where('log_date', $date)
             ->first();
 
-        if ($log) {
-            $log->delete();
-            $status = 'unmarked';
+        if ($existing) {
+            $existing->delete();
         } else {
             HabitLog::create([
-                'habit_id' => $request->habit_id,
-                'log_date' => $request->log_date,
-                'is_completed' => true
+                'habit_id' => $habitId,
+                'log_date' => $date,
             ]);
-            $status = 'marked';
         }
 
-        // --- BERSIHKAN & SAMAKAN LOGIKA DI SINI ---
-        // Gunakan Habit::all() sama seperti yang ada di fungsi index() kamu
-        $habits = Habit::all();
-        $totalHabits = $habits->count();
+        // =========================
+        // HITUNG PERSENTASE BARU
+        // =========================
 
-        $completedCount = HabitLog::whereIn('habit_id', $habits->pluck('id'))
-            ->whereBetween('log_date', [now()->startOfWeek(), now()->endOfWeek()])
-            ->count();
+        $startWeek = now()->startOfWeek()->toDateString();
+        $endWeek = now()->endOfWeek()->toDateString();
 
-        $maxTarget = $totalHabits * 7;
-        $newPercentage = $maxTarget > 0 ? round(($completedCount / $maxTarget) * 100) : 0;
+        $totalHabits = Habit::count();
+
+        $totalDays = 7;
+
+        $totalTarget = $totalHabits * $totalDays;
+
+        $completed = HabitLog::whereBetween('log_date', [
+            $startWeek,
+            $endWeek
+        ])->count();
+
+        $percentage = $totalTarget > 0
+            ? round(($completed / $totalTarget) * 100)
+            : 0;
 
         return response()->json([
-            'status' => $status,
-            'newPercentage' => $newPercentage
+            'success' => true,
+            'newPercentage' => $percentage,
         ]);
     }
-
     public function index()
     {
 
@@ -69,7 +78,7 @@ class HabitLogController extends Controller
             $weekDays[] = [
                 'label' => $date->format('D'),      // Contoh: Mon, Tue
                 'number' => $date->format('d'),      // Contoh: 12, 13
-                'date' => $date->format('Y-m-d')   // Format untuk database
+                'date' => $date->format('Y-m-d'),   // Format untuk database
             ];
         }
 
@@ -77,6 +86,7 @@ class HabitLogController extends Controller
         $habits = Habit::all();
         $tasks = Task::all();
         $categories = Category::all();
+        $tags = Tag::all();
 
         // 3. LOGIKA PERSENTASE & LOG
         $completedCount = HabitLog::whereIn('habit_id', $habits->pluck('id'))
@@ -95,9 +105,9 @@ class HabitLogController extends Controller
             'habitLogs',
             'tasks',
             'weekDays',
-            'categories'
+            'categories',
+            'tags'
         ));
-
 
     }
 }

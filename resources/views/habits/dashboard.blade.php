@@ -6,8 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habitify Dashboard</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite('resources/js/app.js')
 </head>
@@ -18,8 +21,7 @@
         <div x-data="{ sidebarOpen: false }" class="flex h-screen w-full">
 
             <!-- FUNGSI SIDEBAR -->
-            <div x-show="sidebarOpen" @click="sidebarOpen = false"
-                class="fixed inset-0 z-20 bg-black opacity-50 lg:hidden">
+            <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 z-20 bg-black opacity-50 lg:hidden">
             </div>
             @include('habits.sidebar')
 
@@ -49,11 +51,19 @@
                     $currentPercentage = $averagePercentage ?? 0;
                 @endphp
 
+                @php
+                    // Guard agar include sidepanel tidak error jika $tags tidak tersedia di konteks tertentu.
+                    $tags = $tags ?? collect();
+                @endphp
+
                 <!-- Bungkus container utama ke dalam x-data Alpine.js -->
-                <main x-data="habitTracker" data-initial-logs='@json($initialLogs)'
+                <main
+                    x-data="habitTracker()"
+                    data-initial-logs='@json($initialLogs)'
                     data-initial-percentage="{{ $currentPercentage }}"
                     class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8 transition-all duration-300"
-                    x-bind:style="openPanel ? 'max-width: calc(100% - 22rem)' : 'max-width: 100%'">
+                    x-bind:style="openPanel ? 'max-width: calc(100% - 22rem)' : 'max-width: 100%'"
+                >
                     <header class="flex justify-between items-center mb-8">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800">Halo, Muiss! 👋</h1>
@@ -66,7 +76,8 @@
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center space-x-4">
-                                <div class="p-3 bg-blue-50 rounded-xl text-blue-600"><i class="fas fa-list-ul"></i>
+                                <div class="p-3 bg-blue-50 rounded-xl text-blue-600">
+                                    <i class="fas fa-list-ul"></i>
                                 </div>
                                 <div>
                                     <p class="text-2xl font-bold">12</p>
@@ -74,9 +85,11 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center space-x-4">
-                                <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600"><i class="fas fa-fire"></i>
+                                <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+                                    <i class="fas fa-fire"></i>
                                 </div>
                                 <div>
                                     <p class="text-2xl font-bold">7</p>
@@ -84,18 +97,23 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center space-x-4">
-                                <div class="p-3 bg-amber-50 rounded-xl text-amber-600"><i class="fas fa-star"></i></div>
+                                <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
+                                    <i class="fas fa-star"></i>
+                                </div>
                                 <div>
-                                    <p class="text-2xl font-bold" x-text="percentage + '%'"></p>
+                                    <p class="text-2xl font-bold" x-text="percentage + '%'">%</p>
                                     <p class="text-xs text-gray-500">Rata-rata Minggu</p>
                                 </div>
                             </div>
                         </div>
+
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center space-x-4">
-                                <div class="p-3 bg-sky-50 rounded-xl text-sky-600"><i class="fas fa-chart-line"></i>
+                                <div class="p-3 bg-sky-50 rounded-xl text-sky-600">
+                                    <i class="fas fa-chart-line"></i>
                                 </div>
                                 <div>
                                     <p class="text-2xl font-bold">28</p>
@@ -112,61 +130,47 @@
                                 <div>
                                     <h3 class="text-xl font-semibold text-slate-900">Daftar Tugas</h3>
                                 </div>
-                                <button @click="openPanel = true"
-                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 w-full md:w-auto">
+                                <button
+                                    @click="openPanel = true"
+                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 w-full md:w-auto"
+                                >
                                     + Tambah Tugas
                                 </button>
                             </div>
 
-                            <div class="mb-6 flex flex-nowrap overflow-x-auto lg:flex-wrap lg:overflow-x-visible gap-2 pb-2 scrollbar-none"
-                                style="-webkit-overflow-scrolling: touch;">
+                            <div
+                                class="mb-6 flex flex-nowrap overflow-x-auto lg:flex-wrap lg:overflow-x-visible gap-2 pb-2 scrollbar-none"
+                                style="-webkit-overflow-scrolling: touch;"
+                            >
                                 @foreach(['Semua', 'Hari Ini', 'Penting', 'Selesai'] as $tab)
-                                    <button type="button"
-                                        class="rounded-full px-4 py-2 text-sm font-semibold transition 
-                                                                                                                                                                           shrink-0 lg:shrink h-auto min-w-max
-                                                                                                                                                                           {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                                    <button
+                                        type="button"
+                                        class="rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 lg:shrink h-auto min-w-max {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
+                                    >
                                         {{ $tab }}
                                     </button>
                                 @endforeach
                             </div>
 
-                            <div class="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 scrollbar-none"
-                                style="-webkit-overflow-scrolling: touch;">
-
+                            <div
+                                class="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 scrollbar-none"
+                                style="-webkit-overflow-scrolling: touch;"
+                            >
                                 <div class="min-w-[900px]">
-
                                     <!-- HEADER -->
-                                    <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr]
-                                        gap-4 items-center
-                                        text-sm text-slate-500 uppercase tracking-[0.2em]
-                                        border-b border-slate-200 pb-4 mb-4 pr-3">
-
-                                        <div class="pl-10 font-semibold text-center">
-                                            Tugas
-                                        </div>
-
-                                        <div class="font-semibold text-center pl-4">
-                                            Kategori
-                                        </div>
-
-                                        <div class="font-semibold text-center pl-3">
-                                            Prioritas
-                                        </div>
-
-                                        <div class="font-semibold text-center">
-                                            Tanggal
-                                        </div>
-
-                                        <div class="font-semibold text-center pr-1">
-                                            Edit
-                                        </div>
+                                    <div
+                                        class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-4 mb-4 pr-3"
+                                    >
+                                        <div class="pl-10 font-semibold text-center">Tugas</div>
+                                        <div class="font-semibold text-center pl-4">Kategori</div>
+                                        <div class="font-semibold text-center pl-3">Prioritas</div>
+                                        <div class="font-semibold text-center">Tanggal</div>
+                                        <div class="font-semibold text-center pr-1">Edit</div>
                                     </div>
 
                                     <!-- LIST -->
                                     <div class="space-y-3">
-
                                         @forelse($tasks as $task)
-
                                             @php
                                                 $categoryName = $task->category->name ?? 'Tanpa Kategori';
 
@@ -189,36 +193,31 @@
 
                                             <!-- ROW -->
                                             <div
-                                                class="rounded-[1.75rem] border border-slate-200 bg-slate-50
-                                                                                                                                               px-5 py-4 shadow-sm transition
-                                                                                                                                               hover:border-slate-300 hover:shadow-md">
-
+                                                id="task-row-{{ $task->id }}"
+                                                class="rounded-[1.75rem] border border-slate-200 bg-slate-50 px-5 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                                            >
                                                 <div
-                                                    class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr]
-                                                                                                                                                   gap-4 items-center text-sm text-slate-700">
-
+                                                    class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-700"
+                                                >
                                                     <!-- TUGAS -->
-                                                    <div class="grid grid-cols-[24px_1fr] gap-4 items-start">
-
-                                                        <input type="checkbox"
-                                                            class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                                    <div class="grid grid-cols-[24px_1fr] gap-1 items-start">
+                                                        <input
+                                                            type="checkbox"
+                                                            class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                        />
 
                                                         <div class="min-w-0">
-                                                            <p class="font-semibold text-slate-900 truncate">
-                                                                {{ $task->title }}
-                                                            </p>
+                                                            <p class="font-semibold text-slate-900 truncate">{{ $task->title }}</p>
 
                                                             <p class="text-xs text-slate-500 mt-1 hidden lg:block">
-                                                                {{ $categoryName }} · {{ $task->priority }} ·
-{{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
+                                                                {{ $description = Str::limit($task->description, 60) }} 
                                                             </p>
                                                         </div>
                                                     </div>
 
                                                     <!-- KATEGORI -->
                                                     <div class="flex justify-center">
-                                                        <span
-                                                            class="inline-flex items-center rounded-full px-5 py-1 text-xs font-semibold {{ $categoryColor }}">
+                                                        <span class="inline-flex items-center rounded-full px-5 py-1 text-xs font-semibold {{ $categoryColor }}">
                                                             {{ $categoryName }}
                                                         </span>
                                                     </div>
@@ -231,32 +230,53 @@
                                                     <!-- TANGGAL -->
                                                     <div class="flex items-center justify-center">
                                                         <span class="text-sm text-slate-500 whitespace-nowrap">
-{{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
+                                                            {{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
                                                         </span>
                                                     </div>
 
                                                     <!-- AKSI -->
-                                                    <div class="flex items-center justify-center">
+                                                    <div class="flex flex-col items-center justify-center gap-1">
+                                                        <!-- EDIT -->
                                                         <button
-                                                            class="rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700">
+                                                            type="button"
+                                                            @click='openEditTask({
+                                                                id: {{ $task->id }},
+                                                                title: @json($task->title),
+                                                                category_id: {{ $task->category_id ?? "null" }},
+                                                                priority: @json($task->priority),
+                                                                due_date: @json($task->due_date),
+                                                                description: @json($task->description)
+                                                            })'
+                                                            class="rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                                                        >
                                                             <i class="fas fa-pen text-sm"></i>
                                                         </button>
-                                                    </div>
 
+                                                        <!-- HAPUS -->
+                                                        <form
+                                                            id="delete-form-{{ $task->id }}"
+                                                            action="{{ route('tasks.destroy', $task->id) }}"
+                                                            method="POST"
+                                                        >
+                                                            @csrf
+                                                            @method('DELETE')
+
+                                                            <button
+                                                                type="button"
+                                                                onclick="confirmDelete({{ $task->id }})"
+                                                                class="rounded-full p-2 text-red-400 transition hover:bg-red-100 hover:text-red-600"
+                                                            >
+                                                                <i class="fas fa-trash text-sm"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
-
                                         @empty
-
-                                            <div
-                                                class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
-                                                <p class="text-slate-500">
-                                                    Belum ada tugas.
-                                                </p>
+                                            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                                                <p class="text-slate-500">Belum ada tugas.</p>
                                             </div>
-
                                         @endforelse
-
                                     </div>
                                 </div>
                             </div>
@@ -268,39 +288,36 @@
                                 <div>
                                     <h3 class="text-xl font-semibold text-slate-900">Habit Tracker</h3>
                                 </div>
-                                <select
-                                    class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+                                <select class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
                                     <option>Minggu Ini</option>
                                 </select>
                             </div>
 
-
                             <div class="overflow-x-auto">
-                                <div class="flex gap-2 md:gap-5 px-4 text-xs uppercase tracking-[0.24em] 
-                                text-slate-500 font-semibold border-b border-slate-200 pb-3 mb-4 min-w-max">
+                                <div
+                                    class="flex gap-2 md:gap-5 px-4 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold border-b border-slate-200 pb-3 mb-4 min-w-max"
+                                >
                                     <div class="w-48 text-center mt-2 font-bold text-lg">Habit</div>
                                     @foreach($weekDays as $day)
                                         <div class="w-16 text-center">
                                             <div>{{ $day['label'] }}</div>
-                                            <div class="mt-1 text-sm font-semibold text-slate-900">{{ $day['number'] }}
-                                            </div>
+                                            <div class="mt-1 text-sm font-semibold text-slate-900">{{ $day['number'] }}</div>
                                         </div>
                                     @endforeach
                                 </div>
+
                                 <div class="space-y-4">
                                     @foreach($habits as $habit)
-                                        <div
-                                            class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm min-w-max">
-
+                                        <div class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm min-w-max">
                                             <div class="flex items-center gap-2 md:gap-3 w-48 shrink-0">
-                                                <div class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
-                                                    style="background-color: {{ $habit->color }};">
+                                                <div
+                                                    class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
+                                                    style="background-color: {{ $habit->color }};"
+                                                >
                                                     <i class="fas {{ $habit->icon }} text-lg"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="font-bold text-slate-900 text-sm leading-tight">
-                                                        {{ $habit->title }}
-                                                    </p>
+                                                    <p class="font-bold text-slate-900 text-sm leading-tight">{{ $habit->title }}</p>
                                                     <p class="text-xs text-slate-400">Habit harian fixed</p>
                                                 </div>
                                             </div>
@@ -311,41 +328,39 @@
                                                     // Cek langsung lewat data log yang dikirim dari Backend Laravel
                                                     $isDone = isset($habitLogs[$habit->id]) && $habitLogs[$habit->id]->contains('log_date', $cellDate);
                                                 @endphp
+
                                                 <div class="w-16 flex justify-center">
-                                                    <button type="button"
+                                                    <button
+                                                        type="button"
                                                         @click="toggleHabit({{ $habit->id }}, '{{ $cellDate }}')"
                                                         class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out"
-                                                        :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'">
+                                                        :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'"
+                                                    >
                                                         <template x-if="habits[{{ $habit->id }}]['{{ $cellDate }}']">
                                                             <i class="fas fa-check"></i>
                                                         </template>
                                                     </button>
                                                 </div>
                                             @endforeach
-
                                         </div>
                                     @endforeach
                                 </div>
+
                                 <div class="mt-2 mb-2 text-sm font-semibold text-blue-600">Lihat semua habit</div>
                             </div>
                         </div>
                     </div>
 
-
-                    <div
-                        class="mt-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div class="mt-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
                         <div class="flex items-start gap-6 relative z-10">
                             <div class="text-indigo-200">
                                 <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24">
-                                    <path
-                                        d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.866 19.883 22 16.017 22H14.017V21ZM1 21L1 18C1 16.8954 1.89543 16 3 16H6C6.55228 16 7 15.5523 7 15V9C7 8.44772 6.55228 8 6 8H3C1.89543 8 1 7.10457 1 6V5C1 3.89543 1.89543 3 3 3H6C8.20914 3 10 4.79086 10 7V15C10 18.866 6.86599 22 3 22H1V21Z" />
+                                    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.866 19.883 22 16.017 22H14.017V21ZM1 21L1 18C1 16.89543 1.89543 16 3 16H6C6.55228 16 7 15.5523 7 15V9C7 8.44772 6.55228 8 6 8H3C1.89543 8 1 7.10457 1 6V5C1 3.89543 1.89543 3 3 3H6C8.20914 3 10 4.79086 10 7V15C10 18.866 6.86599 22 3 22H1V21Z" />
                                 </svg>
                             </div>
 
                             <div>
-                                <h3 class="text-xl font-bold text-slate-800 mb-2">
-                                    Disiplin adalah jembatan antara tujuan dan pencapaian.
-                                </h3>
+                                <h3 class="text-xl font-bold text-slate-800 mb-2">Disiplin adalah jembatan antara tujuan dan pencapaian.</h3>
                                 <p class="text-slate-500">Terus konsisten dan jangan menyerah!</p>
                             </div>
                         </div>
@@ -363,3 +378,4 @@
 </body>
 
 </html>
+

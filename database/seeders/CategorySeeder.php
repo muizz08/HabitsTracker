@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Category;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
@@ -12,7 +12,7 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\Category::insert([
+        Category::insert([
             ['name' => 'Penting', 'color' => 'red'],
             ['name' => 'Kerja', 'color' => 'orange'],
             ['name' => 'Belajar', 'color' => 'blue'],

@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Habit;
+use App\Models\HabitLog;
 use App\Models\User;
-use App\Models\HabitLog; 
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class HabitSeeder extends Seeder
 {
@@ -26,16 +26,16 @@ class HabitSeeder extends Seeder
             // Simpan ke database sebagai Object Model Eloquent murni
             $insertedHabit = Habit::create([
                 'user_id' => $user->id,
-                'title'   => $item['title'],
-                'icon'    => $item['icon'],
-                'color'   => $item['color'],
+                'title' => $item['title'],
+                'icon' => $item['icon'],
+                'color' => $item['color'],
             ]);
 
             // Gunakan ->id dari Object $insertedHabit murni
             HabitLog::create([
-                'habit_id'     => $insertedHabit->id, 
-                'log_date'     => Carbon::now()->format('Y-m-d'),
-                'is_completed' => true
+                'habit_id' => $insertedHabit->id,
+                'log_date' => Carbon::now()->format('Y-m-d'),
+                'is_completed' => true,
             ]);
         }
     }
