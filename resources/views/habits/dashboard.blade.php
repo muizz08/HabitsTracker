@@ -16,16 +16,14 @@
 </head>
 
 <body class="bg-gray-50 font-sans">
-    <!-- dasboard -->
     <div class="flex h-screen">
         <div x-data="{ sidebarOpen: false }" class="flex h-screen w-full">
 
-            <!-- FUNGSI SIDEBAR -->
-            <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 z-20 bg-black opacity-50 lg:hidden">
+            <div x-show="sidebarOpen" @click="sidebarOpen = false"
+                class="fixed inset-0 z-20 bg-black opacity-50 lg:hidden">
             </div>
             @include('habits.sidebar')
 
-            <!-- FUNGSI DASHBOARD -->
             <div class="flex-1 flex flex-col overflow-hidden">
                 <header class="flex items-center justify-between p-4 bg-white border-b lg:hidden">
                     <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 focus:outline-none">
@@ -56,14 +54,10 @@
                     $tags = $tags ?? collect();
                 @endphp
 
-                <!-- Bungkus container utama ke dalam x-data Alpine.js -->
-                <main
-                    x-data="habitTracker()"
-                    data-initial-logs='@json($initialLogs)'
+                <main x-data="habitTracker()" data-initial-logs='@json($initialLogs)'
                     data-initial-percentage="{{ $currentPercentage }}"
                     class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8 transition-all duration-300"
-                    x-bind:style="openPanel ? 'max-width: calc(100% - 22rem)' : 'max-width: 100%'"
-                >
+                    x-bind:style="openPanel ? 'max-width: calc(100% - 22rem)' : 'max-width: 100%'">
                     <header class="flex justify-between items-center mb-8">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800">Halo, Muiss! 👋</h1>
@@ -80,7 +74,17 @@
                                     <i class="fas fa-list-ul"></i>
                                 </div>
                                 <div>
-                                    <p class="text-2xl font-bold">12</p>
+                                    <p class="text-2xl font-bold">
+                                        {{ $tasks->filter(function($task) {
+                                            if (!$task->due_date) return false;
+                                            
+                                            // Ubah due_date dan tanggal hari ini ke format string yang sama (Y-m-d)
+                                            $taskDate = \Carbon\Carbon::parse($task->due_date)->format('Y-m-d');
+                                            $today = \Carbon\Carbon::today()->format('Y-m-d');
+                                            
+                                            return $taskDate === $today;
+                                        })->count() }}
+                                    </p>
                                     <p class="text-xs text-gray-500">Tugas Hari Ini</p>
                                 </div>
                             </div>
@@ -92,7 +96,7 @@
                                     <i class="fas fa-fire"></i>
                                 </div>
                                 <div>
-                                    <p class="text-2xl font-bold">7</p>
+                                    <p class="text-2xl font-bold">6</p>
                                     <p class="text-xs text-gray-500">Habit Aktif</p>
                                 </div>
                             </div>
@@ -123,44 +127,49 @@
                         </div>
                     </div>
 
-                    <!-- DAFTAR TUGAS -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
                                 <div>
                                     <h3 class="text-xl font-semibold text-slate-900">Daftar Tugas</h3>
                                 </div>
-                                <button
-                                    @click="openPanel = true"
-                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 w-full md:w-auto"
-                                >
+                                <button @click="openPanel = true; panelMode = 'create'"
+                                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 w-full md:w-auto">
                                     + Tambah Tugas
                                 </button>
                             </div>
 
-                            <div
-                                class="mb-6 flex flex-nowrap overflow-x-auto lg:flex-wrap lg:overflow-x-visible gap-2 pb-2 scrollbar-none"
-                                style="-webkit-overflow-scrolling: touch;"
-                            >
-                                @foreach(['Semua', 'Hari Ini', 'Penting', 'Selesai'] as $tab)
-                                    <button
-                                        type="button"
-                                        class="rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 lg:shrink h-auto min-w-max {{ $loop->first ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
-                                    >
+                            @php
+                                $defaultTabs = ['Semua', 'Hari Ini', 'Selesai'];
+                            @endphp
+
+                            <div class="mb-6 flex flex-nowrap overflow-x-auto lg:flex-wrap lg:overflow-x-visible gap-2 pb-2 scrollbar-none"
+                                style="-webkit-overflow-scrolling: touch;">
+
+                                {{-- DEFAULT FILTER --}}
+                                @foreach($defaultTabs as $tab)
+                                    <button type="button" @click="activeFilter = '{{ $tab }}'"
+                                        :class="activeFilter === '{{ $tab }}' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                        class="rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 lg:shrink h-auto min-w-max">
                                         {{ $tab }}
                                     </button>
                                 @endforeach
+
+                                {{-- TAG FILTER --}}
+                                @foreach($tags as $tag)
+                                    <button type="button" @click="activeFilter = '{{ $tag->name }}'"
+                                        :class="activeFilter === '{{ $tag->name }}' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                        class="rounded-full px-4 py-2 text-sm font-semibold transition shrink-0 lg:shrink h-auto min-w-max">
+                                        #{{ $tag->name }}
+                                    </button>
+                                @endforeach
+
                             </div>
 
-                            <div
-                                class="w-full overflow-x-auto overscroll-x-contain scroll-smooth pb-2 scrollbar-none"
-                                style="-webkit-overflow-scrolling: touch;"
-                            >
+                            <div class="w-full overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
                                 <div class="min-w-[900px]">
-                                    <!-- HEADER -->
-                                    <div
-                                        class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-4 mb-4 pr-3"
-                                    >
+                                    <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-4 mb-3 pr-3">
                                         <div class="pl-10 font-semibold text-center">Tugas</div>
                                         <div class="font-semibold text-center pl-4">Kategori</div>
                                         <div class="font-semibold text-center pl-3">Prioritas</div>
@@ -168,11 +177,11 @@
                                         <div class="font-semibold text-center pr-1">Edit</div>
                                     </div>
 
-                                    <!-- LIST -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-5 max-h-[477px] overflow-y-auto custom-scroll">
                                         @forelse($tasks as $task)
                                             @php
                                                 $categoryName = $task->category->name ?? 'Tanpa Kategori';
+                                                $isCompleted = $task->is_completed ?? false;
 
                                                 $categoryColor = match (strtolower($categoryName)) {
                                                     'penting' => 'bg-red-100 text-red-700',
@@ -191,81 +200,66 @@
                                                 };
                                             @endphp
 
-                                            <!-- ROW -->
-                                            <div
-                                                id="task-row-{{ $task->id }}"
-                                                class="rounded-[1.75rem] border border-slate-200 bg-slate-50 px-5 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
-                                            >
-                                                <div
-                                                    class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-700"
-                                                >
-                                                    <!-- TUGAS -->
+                                            <div id="task-row-{{ $task->id }}" x-show="
+                                                    activeFilter === 'Semua' || 
+                                                    (activeFilter === 'Hari Ini' && {{ $task->due_date ? (\Carbon\Carbon::parse($task->due_date)->isToday() ? 'true' : 'false') : 'false' }}) || 
+                                                    (activeFilter === 'Selesai' && {{ $isCompleted ? 'true' : 'false' }}) || 
+                                                    '{{ $task->tags->pluck('name')->implode(',') }}'.split(',').includes(activeFilter)
+                                                 "
+                                                class="rounded-[1.75rem] border border-slate-200 bg-slate-50 px-5 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+
+                                                <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-700">
                                                     <div class="grid grid-cols-[24px_1fr] gap-1 items-start">
-                                                        <input
-                                                            type="checkbox"
-                                                            class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                                        />
+                                                        <input type="checkbox" @if($isCompleted) checked @endif
+                                                            class="mt-1 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
 
                                                         <div class="min-w-0">
-                                                            <p class="font-semibold text-slate-900 truncate">{{ $task->title }}</p>
-
-                                                            <p class="text-xs text-slate-500 mt-1 hidden lg:block">
-                                                                {{ $description = Str::limit($task->description, 60) }} 
+                                                            <p class="font-semibold text-slate-900 truncate {{ $isCompleted ? 'line-through text-slate-400' : '' }}">
+                                                                {{ $task->title }}
                                                             </p>
+                                                            @if($task->description)
+                                                                <p class="text-xs text-slate-500 mt-1 hidden lg:block">
+                                                                    {{ Str::limit($task->description, 60) }}
+                                                                </p>
+                                                            @endif
                                                         </div>
                                                     </div>
 
-                                                    <!-- KATEGORI -->
                                                     <div class="flex justify-center">
                                                         <span class="inline-flex items-center rounded-full px-5 py-1 text-xs font-semibold {{ $categoryColor }}">
                                                             {{ $categoryName }}
                                                         </span>
                                                     </div>
 
-                                                    <!-- PRIORITAS -->
                                                     <div class="text-center text-sm font-semibold {{ $priorityColor }}">
                                                         {{ $task->priority }}
                                                     </div>
 
-                                                    <!-- TANGGAL -->
                                                     <div class="flex items-center justify-center">
                                                         <span class="text-sm text-slate-500 whitespace-nowrap">
-                                                            {{ \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') }}
+                                                            {{ $task->due_date ? \Carbon\Carbon::parse($task->due_date)->translatedFormat('d M Y') : '-' }}
                                                         </span>
                                                     </div>
 
-                                                    <!-- AKSI -->
-                                                    <div class="flex flex-col items-center justify-center gap-1">
-                                                        <!-- EDIT -->
-                                                        <button
-                                                            type="button"
-                                                            @click='openEditTask({
-                                                                id: {{ $task->id }},
-                                                                title: @json($task->title),
-                                                                category_id: {{ $task->category_id ?? "null" }},
-                                                                priority: @json($task->priority),
-                                                                due_date: @json($task->due_date),
-                                                                description: @json($task->description)
+                                                    <div class="flex flex-col items-center justify-center gap-2">
+                                                        <button type="button" @click='openEditTask({
+                                                            id: {{ $task->id }},
+                                                            title: @json($task->title),
+                                                            category_id: {{ $task->category_id ?? "null" }},
+                                                            priority: @json($task->priority),
+                                                            due_date: @json($task->due_date),
+                                                            description: @json($task->description)
                                                             })'
-                                                            class="rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
-                                                        >
+                                                            class="rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700">
                                                             <i class="fas fa-pen text-sm"></i>
                                                         </button>
 
-                                                        <!-- HAPUS -->
-                                                        <form
-                                                            id="delete-form-{{ $task->id }}"
-                                                            action="{{ route('tasks.destroy', $task->id) }}"
-                                                            method="POST"
-                                                        >
+                                                        <form id="delete-form-{{ $task->id }}"
+                                                            action="{{ route('tasks.destroy', $task->id) }}" method="POST">
                                                             @csrf
                                                             @method('DELETE')
-
-                                                            <button
-                                                                type="button"
-                                                                onclick="confirmDelete({{ $task->id }})"
-                                                                class="rounded-full p-2 text-red-400 transition hover:bg-red-100 hover:text-red-600"
-                                                            >
+                                                            <button type="button" onclick="confirmDelete({{ $task->id }})"
+                                                                class="rounded-full p-1 text-red-400 transition hover:bg-red-100 hover:text-red-600">
                                                                 <i class="fas fa-trash text-sm"></i>
                                                             </button>
                                                         </form>
@@ -282,7 +276,6 @@
                             </div>
                         </div>
 
-                        <!-- HABITS TRACKER -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
                                 <div>
@@ -294,9 +287,7 @@
                             </div>
 
                             <div class="overflow-x-auto">
-                                <div
-                                    class="flex gap-2 md:gap-5 px-4 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold border-b border-slate-200 pb-3 mb-4 min-w-max"
-                                >
+                                <div class="flex gap-2 md:gap-5 px-4 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold border-b border-slate-200 pb-3 mb-4 min-w-max">
                                     <div class="w-48 text-center mt-2 font-bold text-lg">Habit</div>
                                     @foreach($weekDays as $day)
                                         <div class="w-16 text-center">
@@ -310,14 +301,14 @@
                                     @foreach($habits as $habit)
                                         <div class="flex items-center gap-2 md:gap-5 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm min-w-max">
                                             <div class="flex items-center gap-2 md:gap-3 w-48 shrink-0">
-                                                <div
-                                                    class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
-                                                    style="background-color: {{ $habit->color }};"
-                                                >
+                                                <div class="h-12 w-12 rounded-full grid place-items-center text-white shrink-0"
+                                                    style="background-color: {{ $habit->color }};">
                                                     <i class="fas {{ $habit->icon }} text-lg"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="font-bold text-slate-900 text-sm leading-tight">{{ $habit->title }}</p>
+                                                    <p class="font-bold text-slate-900 text-sm leading-tight">
+                                                        {{ $habit->title }}
+                                                    </p>
                                                     <p class="text-xs text-slate-400">Habit harian fixed</p>
                                                 </div>
                                             </div>
@@ -330,12 +321,10 @@
                                                 @endphp
 
                                                 <div class="w-16 flex justify-center">
-                                                    <button
-                                                        type="button"
+                                                    <button type="button"
                                                         @click="toggleHabit({{ $habit->id }}, '{{ $cellDate }}')"
                                                         class="inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 ease-in-out"
-                                                        :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'"
-                                                    >
+                                                        :class="habits[{{ $habit->id }}]['{{ $cellDate }}'] ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'">
                                                         <template x-if="habits[{{ $habit->id }}]['{{ $cellDate }}']">
                                                             <i class="fas fa-check"></i>
                                                         </template>
@@ -345,8 +334,6 @@
                                         </div>
                                     @endforeach
                                 </div>
-
-                                <div class="mt-2 mb-2 text-sm font-semibold text-blue-600">Lihat semua habit</div>
                             </div>
                         </div>
                     </div>
@@ -378,4 +365,3 @@
 </body>
 
 </html>
-

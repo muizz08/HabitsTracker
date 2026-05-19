@@ -2,12 +2,12 @@ export default () => ({
     percentage: 0,
     habits: {},
 
-    
+    activeFilter: 'Semua',
     // PANEL
     openPanel: false,
     panelMode: 'create',
     panelTaskId: null,
-    
+
 
     // FORM TASK
     form: {
@@ -72,6 +72,28 @@ export default () => ({
         }
 
         this.openPanel = true
+    },
+
+    filterTask(task) {
+
+        if (this.activeFilter === 'Semua') {
+            return true
+        }
+
+        if (this.activeFilter === 'Hari Ini') {
+
+            const today = new Date().toISOString().split('T')[0]
+
+            return task.due_date === today
+        }
+
+        if (this.activeFilter === 'Selesai') {
+            return task.is_completed
+        }
+
+        return task.tags?.some(tag =>
+            tag.name === this.activeFilter
+        )
     },
 
     async toggleHabit(habitId, date) {

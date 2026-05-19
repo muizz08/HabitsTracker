@@ -20,6 +20,7 @@ class HabitSeeder extends Seeder
             ['title' => 'Membaca Buku', 'icon' => 'fa-book-open', 'color' => '#8b5cf6'],
             ['title' => 'Meditasi 10 Menit', 'icon' => 'fa-peace', 'color' => '#ec4899'],
             ['title' => 'Tidur Sebelum 22:00', 'icon' => 'fa-moon', 'color' => '#1e293b'],
+            ['title' => 'Belajar Coding 1 Jam', 'icon' => 'fa-laptop-code', 'color' => '#10b981'],
         ];
 
         foreach ($dataHabits as $item) {

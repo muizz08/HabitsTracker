@@ -16,8 +16,7 @@ class SidebarController extends Controller
         // 1. Ambil semua kategori untuk dropdown di form "Tambah Tugas"
         $categories = Category::all();
         // 2a. Ambil semua tag dari tabel tags
-        $tags = Tag::all();
-
+        $tasks = Task::with('tags')->get();
         // 2. Ambil Todo List yang belum selesai (is_completed = false)
         // Kita gunakan eager loading 'with' agar lebih ringan saat ambil data kategori
         $tasks = Task::with('category')->where('is_completed', false)->get();
