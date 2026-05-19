@@ -65,10 +65,17 @@ export default () => ({
             title: task.title ?? '',
             category_id: task.category_id ?? '',
             priority: task.priority ?? 'Tinggi',
-            due_date: task.due_date ?? '',
+
+            due_date: task.due_date
+                ? task.due_date.split(' ')[0]
+                : '',
+
             description: task.description ?? '',
-            reminder: task.reminder ?? false,
-            tags: task.tags ?? [],
+            reminder: !!task.reminder,
+
+            tags: task.tags
+                ? task.tags.map(tag => String(tag.id))
+                : [],
         }
 
         this.openPanel = true

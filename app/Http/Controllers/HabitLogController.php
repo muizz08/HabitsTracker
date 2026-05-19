@@ -84,7 +84,7 @@ class HabitLogController extends Controller
 
         // 2. AMBIL DATA HABITS & TASKS
         $habits = Habit::all();
-        $tasks = Task::all();
+        $tasks = Task::with('tags')->get();
         $categories = Category::all();
         $tags = Tag::all();
 

@@ -90,6 +90,8 @@
                             </div>
                         </div>
 
+
+                        <!-- FUNGSI DASHBOARD -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex items-center space-x-4">
                                 <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
@@ -128,7 +130,8 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
+                        
+                        <!-- DAFTAR -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
                                 <div>
@@ -169,7 +172,7 @@
 
                             <div class="w-full overflow-x-auto" style="-webkit-overflow-scrolling: touch;">
                                 <div class="min-w-[900px]">
-                                    <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 items-center text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-4 mb-3 pr-3">
+                                    <div class="grid grid-cols-[3fr_1.2fr_1fr_1.2fr_0.8fr] gap-1 pr-9 items-center text-sm text-slate-500 uppercase tracking-[0.2em] border-b border-slate-200 pb-4 mb-3 pr-3">
                                         <div class="pl-10 font-semibold text-center">Tugas</div>
                                         <div class="font-semibold text-center pl-4">Kategori</div>
                                         <div class="font-semibold text-center pl-3">Prioritas</div>
@@ -177,7 +180,7 @@
                                         <div class="font-semibold text-center pr-1">Edit</div>
                                     </div>
 
-                                    <div class="space-y-5 max-h-[477px] overflow-y-auto custom-scroll">
+                                    <div class="space-y-5 max-h-[477px] overflow-y-auto custom-scroll" style="scrollbar-gutter: stable;">
                                         @forelse($tasks as $task)
                                             @php
                                                 $categoryName = $task->category->name ?? 'Tanpa Kategori';
@@ -248,7 +251,8 @@
                                                             category_id: {{ $task->category_id ?? "null" }},
                                                             priority: @json($task->priority),
                                                             due_date: @json($task->due_date),
-                                                            description: @json($task->description)
+                                                            description: @json($task->description),
+                                                            tags: @json($task->tags)
                                                             })'
                                                             class="rounded-full p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700">
                                                             <i class="fas fa-pen text-sm"></i>

@@ -11,83 +11,84 @@ use Illuminate\Http\Request;
 
 class SidebarController extends Controller
 {
-    public function index()
-    {
-        // 1. Ambil semua kategori untuk dropdown di form "Tambah Tugas"
-        $categories = Category::all();
-        // 2a. Ambil semua tag dari tabel tags
-        $tasks = Task::with('tags')->get();
-        // 2. Ambil Todo List yang belum selesai (is_completed = false)
-        // Kita gunakan eager loading 'with' agar lebih ringan saat ambil data kategori
-        $tasks = Task::with('category')->where('is_completed', false)->get();
+    // public function index()
+    // {
+    //     // 1. Ambil semua kategori untuk dropdown di form "Tambah Tugas"
+    //     $categories = Category::all();
+    //     // 2a. Ambil semua tag dari tabel tags
+    //     $tags = Tag::all();
 
-        // 3. Pastikan habit default tersedia dan tidak bisa ditambah lewat UI
-        $defaultHabits = [
-            ['title' => 'Minum 2L Air', 'icon' => 'fa-tint', 'color' => '#38bdf8'],
-            ['title' => 'Olahraga 30 Menit', 'icon' => 'fa-person-running', 'color' => '#f97316'],
-            ['title' => 'Membaca Buku', 'icon' => 'fa-book-open', 'color' => '#8b5cf6'],
-            ['title' => 'Meditasi 10 Menit', 'icon' => 'fa-moon', 'color' => '#22c55e'],
-            ['title' => 'Tidur Sebelum 22:00', 'icon' => 'fa-bed', 'color' => '#0ea5e9'],
-        ];
+    //     // 2. Ambil Todo List yang belum selesai (is_completed = false)
+    //     // Kita gunakan eager loading 'with' agar lebih ringan saat ambil data kategori
+    //     $tasks = Task::with('category')->where('is_completed', false)->get();
 
-        foreach ($defaultHabits as $habitData) {
-            Habit::updateOrCreate(
-                ['title' => $habitData['title']],
-                ['icon' => $habitData['icon'], 'color' => $habitData['color']]
-            );
-        }
+    //     // 3. Pastikan habit default tersedia dan tidak bisa ditambah lewat UI
+    //     $defaultHabits = [
+    //         ['title' => 'Minum 2L Air', 'icon' => 'fa-tint', 'color' => '#38bdf8'],
+    //         ['title' => 'Olahraga 30 Menit', 'icon' => 'fa-person-running', 'color' => '#f97316'],
+    //         ['title' => 'Membaca Buku', 'icon' => 'fa-book-open', 'color' => '#8b5cf6'],
+    //         ['title' => 'Meditasi 10 Menit', 'icon' => 'fa-moon', 'color' => '#22c55e'],
+    //         ['title' => 'Tidur Sebelum 22:00', 'icon' => 'fa-bed', 'color' => '#0ea5e9'],
+    //     ];
 
-        $habits = Habit::all();
+    //     foreach ($defaultHabits as $habitData) {
+    //         Habit::updateOrCreate(
+    //             ['title' => $habitData['title']],
+    //             ['icon' => $habitData['icon'], 'color' => $habitData['color']]
+    //         );
+    //     }
 
-        $today = now()->toDateString();
-        $weekStart = now()->startOfWeek();
-        $weekEnd = now()->endOfWeek();
+    //     $habits = Habit::all();
 
-        $weekDays = [];
-        for ($i = 0; $i < 7; $i++) {
-            $weekDays[] = $weekStart->copy()->addDays($i);
-        }
+    //     $today = now()->toDateString();
+    //     $weekStart = now()->startOfWeek();
+    //     $weekEnd = now()->endOfWeek();
 
-        $habitLogs = HabitLog::whereBetween('log_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-            ->get()
-            ->groupBy('habit_id')
-            ->map(function ($logs) {
-                return $logs->keyBy('log_date');
-            });
+    //     $weekDays = [];
+    //     for ($i = 0; $i < 7; $i++) {
+    //         $weekDays[] = $weekStart->copy()->addDays($i);
+    //     }
 
-        // 4. Hitung Statistik Sederhana untuk Box di atas UI
-        $totalTasksToday = Task::whereDate('due_date', now())->count();
-        $completedTasksToday = Task::whereDate('due_date', now())->where('is_completed', true)->count();
+    //     $habitLogs = HabitLog::whereBetween('log_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+    //         ->get()
+    //         ->groupBy('habit_id')
+    //         ->map(function ($logs) {
+    //             return $logs->keyBy('log_date');
+    //         });
 
-        // 5. Kirim semua data ke view 'habits.dashboard'
-        return view('habits.dashboard', compact(
-            'categories',
-            'tags',
-            'tasks',
-            'habits',
-            'totalTasksToday',
-            'completedTasksToday',
-            'habitLogs',
-            'today',
-            'weekDays',
-        ));
-    }
+    //     // 4. Hitung Statistik Sederhana untuk Box di atas UI
+    //     $totalTasksToday = Task::whereDate('due_date', now())->count();
+    //     $completedTasksToday = Task::whereDate('due_date', now())->where('is_completed', true)->count();
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-        ]);
+    //     // 5. Kirim semua data ke view 'habits.dashboard'
+    //     return view('habits.dashboard', compact(
+    //         'categories',
+    //         'tags',
+    //         'tasks',
+    //         'habits',
+    //         'totalTasksToday',
+    //         'completedTasksToday',
+    //         'habitLogs',
+    //         'today',
+    //         'weekDays',
+    //     ));
+    // }
 
-        Task::create([
-            'title' => $validated['title'],
-            'category_id' => $validated['category_id'],
-            'priority' => 'Sedang',
-            'due_date' => now()->toDateString(),
-            'is_completed' => false,
-        ]);
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'title' => 'required|string|max:255',
+    //         'category_id' => 'required|exists:categories,id',
+    //     ]);
 
-        return redirect()->back()->with('success', 'Tugas berhasil disimpan.');
-    }
+    //     Task::create([
+    //         'title' => $validated['title'],
+    //         'category_id' => $validated['category_id'],
+    //         'priority' => 'Sedang',
+    //         'due_date' => now()->toDateString(),
+    //         'is_completed' => false,
+    //     ]);
+
+    //     return redirect()->back()->with('success', 'Tugas berhasil disimpan.');
+    // }
 }

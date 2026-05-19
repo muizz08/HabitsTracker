@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User; // Ditambahkan untuk pengaman check user cadangan
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -15,19 +16,17 @@ class TaskController extends Controller
             'priority' => 'required|in:Rendah,Sedang,Tinggi',
             'due_date' => 'required|date',
             'tags' => 'required|array|min:1',
-            'tags.*' => 'exists:tags,id', // Memastikan ID tag yang dipilih valid
+            'tags.*' => 'exists:tags,id',
             'description' => 'nullable',
             'reminder' => 'nullable',
-        ], [
-            'tags.required' => 'Minimal pilih 1 tag',
-            'tags.min' => 'Minimal pilih 1 tag',
         ]);
 
-        // Mengubah string 'true'/'false' dari Alpine menjadi boolean PHP murni
         $isReminder = filter_var($request->reminder, FILTER_VALIDATE_BOOLEAN);
 
+        $userId = auth()->id() ?? \App\Models\User::first()?->id;
+
         $task = Task::create([
-            'user_id' => auth()->id() ?? 1,
+            'user_id' => $userId,
             'category_id' => $request->category_id,
             'title' => $request->title,
             'priority' => $request->priority,
@@ -37,13 +36,9 @@ class TaskController extends Controller
             'is_completed' => false,
         ]);
 
-        // SIMPAN TAGS
         $task->tags()->attach($request->tags);
 
-        return redirect()->back()->with(
-            'success',
-            'Tugas berhasil ditambahkan'
-        );
+        return redirect()->back()->with('success', 'Tugas berhasil ditambahkan');
     }
 
     public function update(Request $request, Task $task)
@@ -62,25 +57,23 @@ class TaskController extends Controller
             'tags.min' => 'Minimal pilih 1 tag',
         ]);
 
-        // Mengubah string 'true'/'false' dari Alpine menjadi boolean PHP murni
         $isReminder = filter_var($request->reminder, FILTER_VALIDATE_BOOLEAN);
+
+        // TAMBAHKAN LOGIKA INI: Format juga di bagian update agar tidak crash saat diedit
+        $formattedDueDate = date('Y-m-d H:i:s', strtotime($request->due_date . ' 23:59:59'));
 
         $task->update([
             'title' => $request->title,
             'category_id' => $request->category_id,
             'priority' => $request->priority,
-            'due_date' => $request->due_date,
+            'due_date' => $formattedDueDate, // <--- Gunakan variabel yang sudah diformat lengkap
             'description' => $request->description,
             'reminder' => $isReminder,
         ]);
 
-        // UPDATE TAGS (Menyelaraskan ID baru dengan yang lama di pivot table)
         $task->tags()->sync($request->tags);
 
-        return redirect()->back()->with(
-            'success',
-            'Task berhasil diperbarui'
-        );
+        return redirect()->back()->with('success', 'Task berhasil diperbarui');
     }
 
     public function destroy(Task $task)
@@ -96,7 +89,6 @@ class TaskController extends Controller
 
     public function toggleStatus(Request $request, Task $task)
     {
-        // Ambil input is_completed dari Alpine/Fetch API secara aman
         $task->update([
             'is_completed' => filter_var($request->input('is_completed'), FILTER_VALIDATE_BOOLEAN)
         ]);
